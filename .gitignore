@@ -1,3 +1,6 @@
 .settings
 build
 target
+.gitignore
+.classpath
+.project
