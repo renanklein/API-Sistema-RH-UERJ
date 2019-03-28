@@ -1,6 +1,5 @@
 .settings
 build
 target
-.gitignore
-.classpath
 .project
+.gitignore
