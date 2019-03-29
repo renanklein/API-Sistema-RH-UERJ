@@ -19,7 +19,7 @@ package br.com.uerj.model;
 		private int idVaga;
 		
 		public Candidato(String cpf, String nome, String status, String unidade, String processo, String perfil, String especialidade,
-				String regiao, String localizacao, String lotacao, String matricula, int idVaga, int idConcurso) {
+				String regiao, String localizacao, String lotacao, String matricula,int idVaga,int idConcurso) {
 			super.setCPF(cpf);
 			super.setNome(nome);
 			this.status = status;
@@ -33,7 +33,6 @@ package br.com.uerj.model;
 			this.matricula = matricula;
 			this.idVaga = idVaga;
 			this.idconcurso = idConcurso;
-			
 		}
 				
 		public Candidato(String cpf, String nome, int idconcurso, int classificacao, int empate, String processo, String perfil,

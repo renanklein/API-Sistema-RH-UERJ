@@ -1,8 +1,12 @@
 package br.com.uerj.rest;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.LinkedList;
 
-
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
@@ -25,6 +29,21 @@ import br.com.uerj.model.Usuario;
 public class UsuarioService {
 	
 	
+	public static byte[] hashPassword(char[] password,byte[] salt,int interations, int keyLenght) {
+		try {
+			SecretKeyFactory skt = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+			PBEKeySpec pks = new PBEKeySpec (password,salt,interations,keyLenght);
+			SecretKey hash = skt.generateSecret(pks);
+			
+			byte[] res = hash.getEncoded();
+			
+			return res;
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		} 
+	}
 	
 	@Path("/post")
 	@POST
@@ -43,8 +62,13 @@ public class UsuarioService {
 		
 		
 		if(password.equals(confirmPassword)) {
+			String salt = "123456";
+			int interations = 500;
+			int keyLenght = 512;
+			byte[] hashSenha = hashPassword(password.toCharArray(),salt.getBytes(),interations,keyLenght);
+			String senhaCrypto = hashSenha.toString();
 			criar.setUsuario(username);
-			criar.setSenha(password);
+			criar.setSenha(senhaCrypto);
 			criar.setPermissao(aux_permission);
 			DAO_user.inserir(criar);
 			
@@ -66,7 +90,12 @@ public class UsuarioService {
 		//Convertendo o json em objeto Usuario
 		Usuario user = DAO_user.consultaUser(username);
 		if(newPassword.equals(confirmNewPassword)) {
-			user.setSenha(newPassword);
+			String salt = "123456";
+			int interations = 500;
+			int keyLenght = 512;
+			byte[] hashSenha = hashPassword(newPassword.toCharArray(),salt.getBytes(),interations,keyLenght);
+			String senhaCrypto = hashSenha.toString();
+			user.setSenha(senhaCrypto);
 			//persistindo a nova senha no bd ... 
 			DAO_user.updateSenha(user);
 			

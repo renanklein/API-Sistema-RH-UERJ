@@ -13,6 +13,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -20,6 +21,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import br.com.uerj.DAO.DAO_Dash;
+import br.com.uerj.DAO.DAO_Util;
 import br.com.uerj.DAO.DAO_mCand;
 import br.com.uerj.model.Candidato;
 
@@ -48,13 +50,12 @@ public class CandidatoService {
 		return lcands;
 	}
 	
-	@Path("/processo/{cd_processo};")
+	@Path("/processo")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public LinkedList<Candidato> candidatosProcesso(@PathParam("cd_processo") String cdProcesso) {
+	public LinkedList<Candidato> candidatosProcesso(@QueryParam("cd_processo") String cdProcesso) {
+		
 		LinkedList<Candidato> lcands = DAO_Dash.ListarCandidatosProcesso(cdProcesso);
-		
-		
 		
 		
 		return lcands;
@@ -117,9 +118,9 @@ public class CandidatoService {
 			    		.build();
 			} else
 				try {
-					if(DAO_mCand.confirmaSelecao(idConcurso, cand.getChave(), idVaga, unidade, lotacao, localiz)){
-						hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getChave(), 2, 3, "");
-						hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getChave(), 3);
+					if(DAO_mCand.confirmaSelecao(idConcurso, cand.getCPF(), idVaga, unidade, lotacao, localiz)){
+						hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 2, 3, "");
+						hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 3);
 						hist = DAO_mCand.alterarStatusVaga(idVaga, 2);
 						
 					}
@@ -148,8 +149,8 @@ public class CandidatoService {
 			if(data != null){
 				if(DAO_mCand.nomearFuncionario(cand.getCPF(), portaria, data,unidade,
 						lotacao, localizacao)){
-					boolean hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getChave(), 8, 4, portaria);
-					hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getChave(), 4);
+					boolean hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 8, 4, portaria);
+					hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 4);
 					hist = DAO_mCand.alterarStatusVaga(idVaga, 1);
 					hist = DAO_mCand.atualizarBancoNomeacao(idConcurso);
 					return Response.status(Response.Status.OK).entity("Nomeação concluída com sucesso!").build();				
@@ -162,8 +163,8 @@ public class CandidatoService {
 	       }
 			else if(matricula != null){
 				if(DAO_mCand.alterarEliminadoApto(cand.getCPF(), 8, matricula, idVaga)){
-					boolean hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getChave(), 2, 8, "");
-					hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getChave(), 8);
+					boolean hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 2, 8, "");
+					hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 8);
 					return Response.status(Response.Status.OK).entity("Alteração realizada com sucesso!")
 							.build();
 				}
@@ -190,13 +191,13 @@ public class CandidatoService {
 		int idVaga = Integer.parseInt(idv);
 		int idConcurso = Integer.parseInt(idc);
 		if(DAO_mCand.processaFimFila(cand.getCPF())){
-			boolean hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getChave(), 5);
+			boolean hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 5);
 			if(cand.getStatus().equals("Candidato")){
-				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getChave(), 1, 5, "");
+				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 1, 5, "");
 				return Response.status(Response.Status.OK).entity("Situação alterada com sucesso!").build();
 			}
 			else{
-				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getChave(), 2, 5, "");
+				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 2, 5, "");
 				hist = DAO_mCand.alterarStatusVaga(idVaga, 4);
 				
 				//INCLUIR O METODO DE SELECAO DE CANDIDATO
@@ -230,6 +231,56 @@ public class CandidatoService {
 		return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Naõ foi possivel selecionar o candidato - Ocorreu um erro inesperado")
 				.build();
 			
+	}
+	
+	@Path("/eliminar")
+	@PUT
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	
+	public Response setEliminado(@FormParam("json") String candJson,@FormParam("idVaga") String idv,
+			@FormParam("idConcurso") String idc) 
+	{
+		int idVaga = Integer.parseInt(idv);
+		int idConcurso = Integer.parseInt(idc);
+		Gson toCandidato = new Gson();
+		Candidato cand = toCandidato.fromJson(candJson, Candidato.class);
+		if(DAO_mCand.alterarEliminadoApto(cand.getCPF(), 7, null, 0)){
+			boolean hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 7);
+			hist = DAO_mCand.alterarStatusVaga(idVaga, 4);
+			hist = DAO_mCand.atualizarBancoEliminacao(idConcurso);
+			if(cand.getStatus().equals("Convocado")){
+				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 2, 7, "");
+			}
+			else if(cand.getStatus().equals("Apto")){
+				hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 8, 5, "");
+			}
+			this.selecionarCandidato(idv, idc, cand.getProcesso());
+			return Response.status(Response.Status.OK).entity("Situação alterada com sucesso!").build();
+		}
+		else {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Naõ foi possivel selecionar o candidato - Ocorreu um erro inesperado")
+					.build();
+		}
+	}
+	
+	@Path("/convocar")
+	@PUT
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	
+	public Response setConvocado(@FormParam("json") String candJson,@FormParam("idVaga") String idv, @FormParam("idConcurso") String idc) {
+		int idVaga = Integer.parseInt(idv);
+		int idConcurso = Integer.parseInt(idc);
+		Gson toCandidato = new Gson();
+		Candidato cand = toCandidato.fromJson(candJson, Candidato.class);
+		if(DAO_mCand.alterarStatusCandidato(cand.getCPF(), 2)){
+			boolean hist = DAO_mCand.escreverHistoricoCand(idConcurso, cand.getCPF(), 3, 2, "");
+			hist = DAO_mCand.escreverHistoricoVaga(idVaga, cand.getCPF(), 2);
+			return Response.status(Response.Status.OK).entity("Situação alterada com sucesso!").build();	
+		}
+		else{
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Não foi possível conectar ao banco de dados!\n"+
+					"Tente novamente, se o problema persistir entre em contato com o suporte.").build();
+		}
 	}
 	
 }
